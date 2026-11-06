@@ -1,0 +1,90 @@
+{
+  "name": "garden-of-little-lights",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "author": "Huiteng Zhuang",
+  "license": "MIT",
+  "description": "A cozy open-source 2.5D garden merge journal for web, desktop, Android and iOS.",
+  "homepage": "https://zhuanght-1201.github.io/garden-of-little-lights/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ZhuangHT-1201/garden-of-little-lights.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ZhuangHT-1201/garden-of-little-lights/issues"
+  },
+  "keywords": [
+    "cozy-game",
+    "merge-game",
+    "react",
+    "vite",
+    "pwa",
+    "electron",
+    "capacitor"
+  ],
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "tsc -b && vite build && node scripts/complete-manifest.mjs",
+    "preview": "vite preview --host 0.0.0.0",
+    "icons": "node scripts/generate-icons.mjs && node scripts/generate-android-assets.mjs && node scripts/generate-ios-assets.mjs",
+    "android:sync": "npm run build && cap sync android",
+    "android:build": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-android.ps1",
+    "ios:sync": "npm run build && cap sync ios",
+    "desktop:build": "npm run build && electron-builder --win portable --x64"
+  },
+  "dependencies": {
+    "@capacitor/core": "^7.4.3",
+    "lucide-react": "^0.468.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^7.4.3",
+    "@capacitor/cli": "^7.4.3",
+    "@capacitor/ios": "^7.4.3",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "electron": "^45.2.3",
+    "electron-builder": "^26.18.0",
+    "playwright": "^1.65.0",
+    "sharp": "^0.35.5",
+    "typescript": "~5.7.2",
+    "vite": "^6.0.5",
+    "vite-plugin-pwa": "^2.0.0"
+  },
+  "main": "desktop/main.cjs",
+  "build": {
+    "appId": "com.guiting.shiguang",
+    "productName": "桂庭拾光",
+    "artifactName": "桂庭拾光-Windows-${version}.${ext}",
+    "directories": {
+      "output": "releases/desktop"
+    },
+    "files": [
+      "dist/**/*",
+      "desktop/**/*",
+      "package.json"
+    ],
+    "asar": true,
+    "win": {
+      "icon": "public/icons/icon-512.png",
+      "signAndEditExecutable": false,
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "portable": {
+      "artifactName": "桂庭拾光-Windows-一键启动-${version}.${ext}"
+    }
+  }
+}

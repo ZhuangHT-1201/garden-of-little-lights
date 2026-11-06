@@ -1,0 +1,124 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1200" viewBox="0 0 1600 1200">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#173a36"/>
+      <stop offset=".46" stop-color="#50756a"/>
+      <stop offset=".72" stop-color="#a8ad8c"/>
+      <stop offset="1" stop-color="#dbcba4"/>
+    </linearGradient>
+    <radialGradient id="moonGlow" cx=".5" cy=".5" r=".5">
+      <stop offset="0" stop-color="#fff5cd" stop-opacity=".9"/>
+      <stop offset=".4" stop-color="#f5dfaa" stop-opacity=".42"/>
+      <stop offset="1" stop-color="#f6d995" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="farHill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#43655a"/>
+      <stop offset="1" stop-color="#698170"/>
+    </linearGradient>
+    <linearGradient id="midHill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#284d43"/>
+      <stop offset="1" stop-color="#456757"/>
+    </linearGradient>
+    <linearGradient id="foreground" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#183c35"/>
+      <stop offset="1" stop-color="#102b28"/>
+    </linearGradient>
+    <linearGradient id="river" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#d2d4b0" stop-opacity=".25"/>
+      <stop offset=".5" stop-color="#e6d7ad" stop-opacity=".72"/>
+      <stop offset="1" stop-color="#aabca6" stop-opacity=".24"/>
+    </linearGradient>
+    <linearGradient id="roof" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1b3f3a"/>
+      <stop offset="1" stop-color="#102b29"/>
+    </linearGradient>
+    <filter id="softGlow" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur stdDeviation="24"/>
+    </filter>
+    <filter id="smallGlow" x="-200%" y="-200%" width="500%" height="500%">
+      <feGaussianBlur stdDeviation="5"/>
+    </filter>
+    <filter id="paper">
+      <feTurbulence type="fractalNoise" baseFrequency=".7" numOctaves="3" seed="4" result="noise"/>
+      <feColorMatrix in="noise" type="saturate" values="0" result="gray"/>
+      <feComponentTransfer in="gray" result="grain">
+        <feFuncA type="table" tableValues="0 .12"/>
+      </feComponentTransfer>
+      <feBlend in="SourceGraphic" in2="grain" mode="multiply"/>
+    </filter>
+    <clipPath id="frame">
+      <rect width="1600" height="1200"/>
+    </clipPath>
+  </defs>
+  <g clip-path="url(#frame)">
+    <rect width="1600" height="1200" fill="url(#sky)"/>
+    <circle cx="1185" cy="238" r="265" fill="url(#moonGlow)"/>
+    <circle cx="1185" cy="238" r="118" fill="#f7e8b7" opacity=".86"/>
+    <circle cx="1154" cy="206" r="25" fill="#d8c894" opacity=".18"/>
+    <circle cx="1226" cy="283" r="38" fill="#d8c894" opacity=".14"/>
+    <path d="M-80 410C138 324 322 321 522 391C708 456 848 436 996 359C1188 258 1366 303 1680 390V590H-80Z" fill="#6c8779" opacity=".42"/>
+    <path d="M-100 505C94 422 259 397 441 459C623 521 778 480 972 397C1150 321 1370 350 1680 493V688H-100Z" fill="url(#farHill)" opacity=".72"/>
+    <g opacity=".32" fill="none" stroke="#e8e0c2" stroke-width="7" stroke-linecap="round">
+      <path d="M124 337C238 299 338 301 453 340"/>
+      <path d="M1004 257C1101 227 1176 234 1261 268"/>
+      <path d="M343 503C456 468 552 473 665 508"/>
+    </g>
+    <path d="M-80 680C143 555 322 553 516 644C697 729 854 697 1031 594C1233 477 1417 536 1680 636V910H-80Z" fill="url(#midHill)"/>
+    <path d="M1074 1200C1040 1057 1120 940 1247 866C1354 803 1454 780 1620 765V1200Z" fill="#203f38"/>
+    <path d="M-60 1200C58 1004 201 877 433 786C610 716 759 693 910 725C1034 751 1119 802 1160 883C1202 968 1120 1104 1013 1200Z" fill="#294e42"/>
+    <path d="M532 1200C681 1078 716 972 738 852C751 779 801 735 875 722C942 711 996 736 1026 785C1095 897 1248 1038 1447 1200Z" fill="url(#river)"/>
+    <path d="M0 778C163 725 321 757 465 837C521 868 563 904 585 949C642 1062 785 1132 941 1200H0Z" fill="#173a33"/>
+    <path d="M1600 808C1451 772 1322 786 1214 847C1120 900 1071 975 1022 1200H1600Z" fill="#16372f"/>
+    <g transform="translate(347 536)">
+      <path d="M88 170L36 191L80 211L119 248H270L334 206L371 183L326 165L398 154L430 182L410 147L327 129L230 143L132 130Z" fill="url(#roof)" stroke="#d0b973" stroke-width="2" stroke-opacity=".35"/>
+      <path d="M145 166H338V282H145Z" fill="#e4d6b0" opacity=".85"/>
+      <path d="M130 185L169 143L353 146L391 190" fill="none" stroke="#173832" stroke-width="18"/>
+      <rect x="154" y="177" width="15" height="110" fill="#6d4e37"/>
+      <rect x="310" y="177" width="15" height="110" fill="#6d4e37"/>
+      <rect x="190" y="202" width="102" height="80" rx="4" fill="#35574c"/>
+      <path d="M241 282V217M190 240H292" stroke="#c9b06d" stroke-width="3" opacity=".65"/>
+      <path d="M125 322L424 321" stroke="#c6b078" stroke-width="7" opacity=".7"/>
+      <g fill="#f8d98b">
+        <circle cx="215" cy="253" r="5"/>
+        <circle cx="266" cy="253" r="5"/>
+      </g>
+    </g>
+    <g transform="translate(1040 688)" opacity=".9">
+      <path d="M0 0C59-15 121 3 177 54C122 54 82 33 46 67Z" fill="none" stroke="#102b28" stroke-width="6"/>
+      <path d="M98 57C149 28 201 36 248 82C197 79 160 86 132 111" fill="none" stroke="#102b28" stroke-width="5"/>
+      <g fill="#e6d6a3" opacity=".7">
+        <circle cx="32" cy="10" r="3"/>
+        <circle cx="64" cy="26" r="2"/>
+        <circle cx="147" cy="76" r="3"/>
+        <circle cx="210" cy="81" r="2"/>
+      </g>
+    </g>
+    <g fill="#d3c89f" opacity=".64">
+      <path d="M1210 744L1240 591L1257 744Z"/>
+      <path d="M1332 778L1356 633L1378 778Z"/>
+      <path d="M1021 795L1047 687L1064 800Z"/>
+    </g>
+    <g opacity=".58" fill="#122f2b">
+      <path d="M90 1200C93 1041 109 926 160 811C128 937 123 1067 134 1200Z"/>
+      <path d="M148 1200C143 1046 166 907 226 781C202 947 194 1080 203 1200Z"/>
+      <path d="M232 1200C217 1043 245 903 307 804C282 944 274 1075 286 1200Z"/>
+      <path d="M1437 1200C1423 1069 1443 963 1495 844C1470 992 1462 1097 1473 1200Z"/>
+      <path d="M1352 1200C1343 1094 1376 966 1430 880C1400 1000 1392 1102 1401 1200Z"/>
+    </g>
+    <g stroke="#d2c59c" stroke-width="4" stroke-linecap="round" opacity=".42" fill="none">
+      <path d="M690 871C772 800 870 783 973 826"/>
+      <path d="M549 931C661 838 799 826 907 875"/>
+      <path d="M439 1007C522 952 608 942 694 970"/>
+      <path d="M1135 973C1200 943 1284 945 1351 980"/>
+    </g>
+    <g filter="url(#smallGlow)" fill="#f9d88a">
+      <circle cx="468" cy="687" r="4"/>
+      <circle cx="921" cy="597" r="3"/>
+      <circle cx="1310" cy="604" r="4"/>
+      <circle cx="1124" cy="861" r="3"/>
+      <circle cx="285" cy="827" r="3"/>
+      <circle cx="775" cy="746" r="2"/>
+    </g>
+    <path d="M0 0H1600V1200H0Z" fill="#e8dcc0" opacity=".035" filter="url(#paper)"/>
+  </g>
+</svg>
