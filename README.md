@@ -161,17 +161,13 @@ mobile builds serve the same local web application and do not require a backend.
 Contributions, bug reports, accessibility feedback, and new translations are
 welcome. Read [CONTRIBUTING.md](./CONTRIBUTING.md) before opening a pull request.
 
-## Design acknowledgements
+## Design direction
 
 The project is an original implementation and uses original code and in-repo
-artwork. Its spatial direction was informed by public gameplay research on cozy
-garden merge games, especially the low-angle island boards and five-to-two
-resource planning discussed in the references listed in
-[horizon-board-direction.md](./research/horizon-board-direction.md).
-
-《reference title》and its characters, artwork, and trademarks belong to their
-respective owners. This repository is not affiliated with or endorsed by that
-project.
+artwork. Its spatial direction was developed from general research into
+low-angle garden boards, tactile merge interactions, and resource planning for
+adjacency-based merge games. No third-party characters, artwork, or trademarks
+are included in this repository.
 
 ## License
 
