@@ -1,8 +1,14 @@
-import { useRef, useState } from "react";
-import { Droplets, Sparkles } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Droplets, Link2, Sparkles } from "lucide-react";
 import type { Cell, GameData, GameEvent, Kind, MergeMode } from "../game/types";
-import { getChapter, getLevel, ITEMS, itemName, localized } from "../game/levels";
-import { gatherLevelFor, MAX_DEW } from "../game/engine";
+import { BOARD_SIZE, getChapter, getLevel, ITEMS, itemName, localized, MAX_LEVEL } from "../game/levels";
+import {
+  adjacentIndices,
+  connectedItemGroup,
+  gatherLevelFor,
+  MAX_DEW,
+  mergeGroupForPair
+} from "../game/engine";
 import { t } from "../game/i18n";
 import ItemArt from "./ItemArt";
 
@@ -64,8 +70,28 @@ export default function GameBoard({
   const inactiveCells = new Set(level.inactive);
   const boardRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<DragState | null>(null);
+  const frameRef = useRef<number | null>(null);
   const [drag, setDrag] = useState<DragState | null>(null);
   const [drop, setDrop] = useState<number | null>(null);
+
+  useEffect(() => () => {
+    if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
+  }, []);
+
+  const selectedCell = selected !== null ? game.board[selected] : null;
+  const selectedGroup = selected !== null ? connectedItemGroup(game.board, selected) : [];
+  const selectedTargets = selected === null || selectedCell?.type !== "item" || selectedCell.level >= MAX_LEVEL
+    ? []
+    : adjacentIndices(selected).filter((index) => mergeGroupForPair(game.board, selected, index, game.mergeMode));
+  const selectedMergeGroup = selectedTargets.length > 0
+    ? mergeGroupForPair(game.board, selected!, selectedTargets[0], game.mergeMode) ?? []
+    : [];
+  const selectedMergeSet = new Set(selectedMergeGroup);
+  const selectedTargetSet = new Set(selectedTargets);
+  const dragMergeGroup = drag?.moved && drop !== null
+    ? mergeGroupForPair(game.board, drag.from, drop, game.mergeMode)
+    : null;
+  const dragMergeSet = new Set(dragMergeGroup ?? []);
 
   const findCell = (x: number, y: number): number | null => {
     const board = boardRef.current;
@@ -98,11 +124,18 @@ export default function GameBoard({
     const current = dragRef.current;
     if (!current || current.pointerId !== event.pointerId) return;
     event.preventDefault();
-    const moved = current.moved || Math.hypot(event.clientX - current.startX, event.clientY - current.startY) > 7;
+    const moved = current.moved || Math.hypot(event.clientX - current.startX, event.clientY - current.startY) > 5;
     const next = { ...current, x: event.clientX, y: event.clientY, moved };
     dragRef.current = next;
-    setDrag(next);
-    setDrop(moved ? findCell(event.clientX, event.clientY) : null);
+    if (frameRef.current === null) {
+      frameRef.current = requestAnimationFrame(() => {
+        frameRef.current = null;
+        const latest = dragRef.current;
+        if (!latest) return;
+        setDrag(latest);
+        setDrop(latest.moved ? findCell(latest.x, latest.y) : null);
+      });
+    }
   };
 
   const pointerUp = (event: React.PointerEvent<HTMLButtonElement>) => {
@@ -114,18 +147,32 @@ export default function GameBoard({
     } else {
       onTapCell(current.from);
     }
+    if (frameRef.current !== null) {
+      cancelAnimationFrame(frameRef.current);
+      frameRef.current = null;
+    }
     dragRef.current = null;
     setDrag(null);
     setDrop(null);
   };
 
   const pointerCancel = () => {
+    if (frameRef.current !== null) {
+      cancelAnimationFrame(frameRef.current);
+      frameRef.current = null;
+    }
     dragRef.current = null;
     setDrag(null);
     setDrop(null);
   };
 
   const draggedCell = drag?.moved && drag.from >= 0 ? game.board[drag.from] : null;
+  const dragTilt = drag ? Math.max(-5, Math.min(5, (drag.x - drag.startX) / 24)) : 0;
+  const mergeIndices = new Set(
+    mergeEvent?.type === "merge"
+      ? mergeEvent.indices ?? (mergeEvent.index !== undefined ? [mergeEvent.index] : [])
+      : []
+  );
 
   return (
     <section className={`board-panel board-chapter-${level.chapter} board-layout-${level.layout}`}>
@@ -193,6 +240,35 @@ export default function GameBoard({
       </div>
 
       <div className={`board-stage board-world-${level.layout}`}>
+        <div
+          className={[
+            "adjacency-guide",
+            selectedCell ? "has-selection" : "",
+            selectedTargets.length > 0 ? "is-ready" : ""
+          ].join(" ")}
+          aria-live="polite"
+        >
+          <span className="adjacency-guide-icon">
+            {selectedTargets.length > 0 ? <Sparkles size={15}/> : <Link2 size={15}/>}
+          </span>
+          <span className="adjacency-guide-copy">
+            <b>
+              {selectedCell?.type === "item"
+                ? itemName(selectedCell.kind, selectedCell.level, lang)
+                : t(lang, "board.adjacentHint", { n: game.mergeMode })}
+            </b>
+            <small>
+              {selectedCell?.type === "item"
+                ? selectedTargets.length > 0
+                  ? t(lang, "board.adjacentReady")
+                  : t(lang, "board.adjacentProgress", {
+                      have: Math.min(selectedGroup.length, game.mergeMode),
+                      need: game.mergeMode
+                    })
+                : t(lang, "board.tap")}
+            </small>
+          </span>
+        </div>
         <span className="board-horizon" aria-hidden="true">
           <i/>
           <i/>
@@ -217,7 +293,19 @@ export default function GameBoard({
               const isHint = hint?.includes(index);
               const isDrop = drop === index;
               const isDragging = drag?.moved && drag.from === index;
-              const showMerge = mergeEvent?.type === "merge" && mergeEvent.index === index;
+              const isPressed = drag?.from === index && !drag.moved;
+              const isMergeTarget = selectedTargetSet.has(index);
+              const isMergePreview = selectedMergeSet.has(index);
+              const isDragMergePreview = dragMergeSet.has(index);
+              const isDropReady = isDrop && dragMergeGroup?.includes(index);
+              const isSameTier = Boolean(
+                draggedCell?.type === "item" &&
+                cell?.type === "item" &&
+                draggedCell.kind === cell.kind &&
+                draggedCell.level === cell.level
+              );
+              const isDropBlocked = Boolean(isDrop && isSameTier && dragMergeGroup === null);
+              const showMerge = mergeIndices.has(index);
               const driftX = ((index * 7 + level.layout * 3) % 5 - 2) * 0.7;
               const driftY = ((index * 5 + level.layout) % 4 - 1.5) * 0.55;
               const driftR = ((index * 11 + level.layout * 4) % 5 - 2) * 0.25;
@@ -229,8 +317,14 @@ export default function GameBoard({
                     cell?.type === "item" ? "has-item" : "",
                     cell?.type === "fog" ? "has-fog" : "",
                     isSelected ? "is-selected" : "",
+                    isPressed ? "is-pressed" : "",
                     isHint ? "is-hint" : "",
+                    isMergeTarget ? "is-merge-target" : "",
+                    isMergePreview ? "is-merge-preview" : "",
+                    isDragMergePreview ? "is-drag-merge-preview" : "",
                     isDrop ? "is-drop" : "",
+                    isDropReady ? "is-drop-ready" : "",
+                    isDropBlocked ? "is-drop-blocked" : "",
                     isDragging ? "is-dragging" : ""
                   ].join(" ")}
                   key={cell?.id ?? `empty-${index}`}
@@ -240,7 +334,7 @@ export default function GameBoard({
                     "--drift-y": `${driftY}px`,
                     "--drift-r": `${driftR}deg`,
                     "--drift-scale": driftScale,
-                    "--cell-row": Math.floor(index / 6)
+                    "--cell-row": Math.floor(index / BOARD_SIZE)
                   } as React.CSSProperties}
                   onPointerDown={(event) => pointerDown(event, index)}
                   onPointerMove={pointerMove}
@@ -270,6 +364,7 @@ export default function GameBoard({
                       <span className="tile-paper"/>
                       <ItemArt kind={cell.kind} level={cell.level} className="tile-art"/>
                       <span className="tile-level">{cell.level}</span>
+                      <span className="tile-name">{itemName(cell.kind, cell.level, lang)}</span>
                       {cell.level >= 5 && <span className="tile-glimmer"/>}
                     </span>
                   )}
@@ -279,7 +374,18 @@ export default function GameBoard({
                     </span>
                   )}
                   {cell === null && <span className="empty-mark"/>}
-                  {showMerge && <span className="merge-pulse" key={mergeEvent.id}/>}
+                  {showMerge && (
+                    <span className="merge-burst" key={`merge-${mergeEvent?.id}-${index}`}>
+                      <i className="merge-pulse"/>
+                      {Array.from({ length: 7 }, (_, spark) => (
+                        <i
+                          key={spark}
+                          className="merge-spark"
+                          style={{ "--spark-angle": `${spark * 51.4}deg` } as React.CSSProperties}
+                        />
+                      ))}
+                    </span>
+                  )}
                 </button>
               );
             })}
@@ -310,10 +416,17 @@ export default function GameBoard({
 
       {draggedCell?.type === "item" && drag && (
         <div
-          className="drag-ghost"
-          style={{ left: drag.x, top: drag.y }}
+          className={`drag-ghost ${dragMergeGroup ? "is-mergeable" : ""}`}
+          style={{
+            left: drag.x,
+            top: drag.y,
+            "--drag-tilt": `${dragTilt}deg`
+          } as React.CSSProperties}
         >
-          <ItemArt kind={draggedCell.kind} level={draggedCell.level}/>
+          <span className="drag-ghost-aura"/>
+          <ItemArt kind={draggedCell.kind} level={draggedCell.level} className="drag-ghost-art"/>
+          <span className="drag-ghost-level">{draggedCell.level}</span>
+          <b className="drag-ghost-name">{itemName(draggedCell.kind, draggedCell.level, lang)}</b>
         </div>
       )}
     </section>

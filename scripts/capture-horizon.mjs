@@ -10,11 +10,11 @@ const views = [
 ];
 const boardMasks = [
   [],
-  [0, 5, 6, 11, 24, 29, 30, 35],
-  [2, 3, 8, 9, 14, 15, 20, 21, 26, 27, 32, 33],
-  [0, 1, 4, 5, 12, 17, 18, 23, 30, 31, 34, 35],
-  [0, 1, 6, 7, 10, 11, 24, 25, 28, 29, 34, 35],
-  [0, 1, 4, 5, 12, 23, 24, 29, 30, 35]
+  [0, 1, 5, 6, 7, 13, 35, 41, 42, 43, 47, 48],
+  [0, 6, 3, 10, 17, 24, 31, 38, 45, 42, 48],
+  [0, 1, 5, 6, 7, 12, 13, 35, 36, 41, 42, 43, 47, 48],
+  [0, 6, 42, 48, 7, 13, 35, 41, 14, 20, 28, 34],
+  [0, 1, 5, 6, 7, 13, 14, 20, 27, 28, 34, 35, 36, 41, 42, 43, 47, 48]
 ];
 const boardCases = [
   { name: "terrace", levelId: 19, layout: 1 },
@@ -43,7 +43,7 @@ function gameState(levelId, board = null) {
 function populatedBoard(layout, levelId) {
   const inactive = new Set(boardMasks[layout - 1]);
   const kinds = ["wood", "flower", "tea", "koi"];
-  const board = Array.from({ length: 36 }, () => null);
+  const board = Array.from({ length: 49 }, () => null);
   board.forEach((_, index) => {
     if (inactive.has(index) || index % 7 === 1) return;
     const kind = kinds[(index + layout) % kinds.length];

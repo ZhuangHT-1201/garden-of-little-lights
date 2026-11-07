@@ -30,6 +30,7 @@ if (-not $jdk21) {
 
 $env:JAVA_HOME = $jdk21.FullName
 $env:Path = "$(Join-Path $env:JAVA_HOME 'bin');$env:Path"
+$appVersion = (Get-Content -Raw -LiteralPath (Join-Path $root 'package.json') | ConvertFrom-Json).version
 
 $androidEnvFile = Join-Path $root '.env.android'
 if (Test-Path -LiteralPath $androidEnvFile) {
@@ -74,7 +75,7 @@ try {
   New-Item -ItemType Directory -Path $releaseDir -Force | Out-Null
   $source = Join-Path $root 'android\app\build\outputs\apk\release\app-release.apk'
   $appName = -join @([char]0x6842, [char]0x5EAD, [char]0x62FE, [char]0x5149)
-  $target = Join-Path $releaseDir "$appName-Android-1.0.0.apk"
+  $target = Join-Path $releaseDir "$appName-Android-$appVersion.apk"
   Copy-Item -LiteralPath $source -Destination $target -Force
   Write-Output "APK: $target"
 }

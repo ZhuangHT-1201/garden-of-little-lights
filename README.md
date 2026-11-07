@@ -13,7 +13,7 @@
 Garden of Little Lights is an original, open-source courtyard game about gathering
 small objects, merging them into larger keepsakes, and slowly filling a handmade
 almanac. It combines a low-angle 2.5D board with paper-cut scenery, six irregular
-garden terraces, 24 chapters, bilingual UI, and a local-first save system.
+7×7 garden terraces, 24 chapters, bilingual UI, and a local-first save system.
 
 No account, ads, analytics, or server connection is required during play.
 
@@ -26,13 +26,13 @@ stand as paper sculptures with contact shadows, and the playable footprint chang
 between full courtyards, moon bays, split brook terraces, flower crosses, orchard
 islands, and moonlit courts.
 
-![Three of the six irregular 2.5D board layouts](./docs/screenshots/board-variants-en.png)
+![Three of the six irregular 7×7 2.5D board layouts](./docs/screenshots/board-variants-en.png)
 
 ## Features
 
 - **24 handcrafted garden pages** across four illustrated chapters.
-- **Two merge rules:** five items become two, or three become one.
-- **Six irregular board silhouettes** with chapter-specific terrain palettes.
+- **Two adjacency-based merge rules:** five touching items become two, or three become one.
+- **Six irregular 7×7 board silhouettes** with chapter-specific terrain palettes.
 - **Four collectible item families:** garden findings, soft blooms, warm tea, and pond koi.
 - **Progression without pressure:** fog clearing, undo, auto-merge, hints, daily gifts, and a local shop.
 - **A collectible almanac** with 24 discoverable item tiers and short lore entries.
@@ -42,9 +42,11 @@ islands, and moonlit courts.
 
 ## Gameplay
 
-Tap a tile to select it, then tap another tile to move or merge. You can also drag
-directly between tiles. Clear mist by spending dew, gather new objects, and deliver
-the items requested by the current garden page.
+Tap a tile to select it, then tap a touching tile to move or merge. You can also
+drag directly between tiles. Matching items must form a connected group using side
+or corner adjacency before they can merge; diagonal contact counts. Clear mist by
+spending dew, gather new objects, and deliver the items requested by the current
+garden page.
 
 | Action | Mouse / touch | Keyboard |
 | --- | --- | --- |

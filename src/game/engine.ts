@@ -90,7 +90,7 @@ export function createBoard(levelId: number): Cell[] {
   const seeds: Item[] = [];
   level.goals.forEach((goal) => {
     const seedLevel = Math.max(1, goal.level - 2);
-    for (let i = 0; i < 6; i += 1) {
+    for (let i = 0; i < 8; i += 1) {
       seeds.push({ id: uid(), type: "item", kind: goal.kind, level: seedLevel });
     }
   });
@@ -133,6 +133,24 @@ function sanitizeBoard(board: Cell[], levelId: number): Cell[] {
     if (target >= 0) next[target] = item;
   });
   return next;
+}
+
+function migrateLegacyBoard(board: Cell[]): Cell[] {
+  const next: Cell[] = Array.from({ length: TOTAL_CELLS }, () => null);
+  const legacySize = 6;
+  for (let index = 0; index < board.length; index += 1) {
+    const row = Math.floor(index / legacySize);
+    const column = index % legacySize;
+    next[(row + 1) * BOARD_SIZE + column + 1] = board[index];
+  }
+  return next;
+}
+
+function migrateBoard(board: Cell[] | undefined | null): Cell[] | null {
+  if (!Array.isArray(board)) return null;
+  if (board.length === TOTAL_CELLS) return board;
+  if (board.length === 36) return migrateLegacyBoard(board);
+  return null;
 }
 
 export function createGame(lang?: Lang): GameData {
@@ -185,9 +203,8 @@ function normalizeGame(raw: Partial<GameData> | null): GameData {
   const fresh = createGame();
   if (!raw) return fresh;
   const levelId = Math.min(Math.max(Number(raw.levelId) || 1, 1), LEVELS.length);
-  const board = Array.isArray(raw.board) && raw.board.length === TOTAL_CELLS
-    ? sanitizeBoard(raw.board, levelId)
-    : fresh.board;
+  const migrated = migrateBoard(raw.board);
+  const board = migrated ? sanitizeBoard(migrated, levelId) : createBoard(levelId);
   const settings: Settings = {
     ...fresh.settings,
     ...(raw.settings ?? {})
@@ -270,18 +287,76 @@ function itemCount(board: Cell[], kind: Kind, level: number): number {
   return board.filter((cell) => cell?.type === "item" && cell.kind === kind && cell.level === level).length;
 }
 
-function itemIndices(board: Cell[], kind: Kind, level: number): number[] {
-  return board
-    .map((cell, index) => (cell?.type === "item" && cell.kind === kind && cell.level === level ? index : -1))
-    .filter((index) => index >= 0);
-}
-
-function distance(a: number, b: number): number {
+function gridDistance(a: number, b: number): number {
   const ax = a % BOARD_SIZE;
   const ay = Math.floor(a / BOARD_SIZE);
   const bx = b % BOARD_SIZE;
   const by = Math.floor(b / BOARD_SIZE);
   return Math.abs(ax - bx) + Math.abs(ay - by);
+}
+
+export function adjacentIndices(index: number): number[] {
+  const row = Math.floor(index / BOARD_SIZE);
+  const column = index % BOARD_SIZE;
+  const neighbors: number[] = [];
+  for (let rowOffset = -1; rowOffset <= 1; rowOffset += 1) {
+    for (let columnOffset = -1; columnOffset <= 1; columnOffset += 1) {
+      if (rowOffset === 0 && columnOffset === 0) continue;
+      const nextRow = row + rowOffset;
+      const nextColumn = column + columnOffset;
+      if (nextRow >= 0 && nextRow < BOARD_SIZE && nextColumn >= 0 && nextColumn < BOARD_SIZE) {
+        neighbors.push(nextRow * BOARD_SIZE + nextColumn);
+      }
+    }
+  }
+  return neighbors;
+}
+
+export function areAdjacent(first: number, second: number): boolean {
+  return adjacentIndices(first).includes(second);
+}
+
+export function connectedItemGroup(board: Cell[], start: number): number[] {
+  const anchor = board[start];
+  if (anchor?.type !== "item") return [];
+  const group: number[] = [];
+  const seen = new Set<number>();
+  const queue = [start];
+  while (queue.length > 0) {
+    const index = queue.shift();
+    if (index === undefined || seen.has(index)) continue;
+    const cell = board[index];
+    if (cell?.type !== "item" || cell.kind !== anchor.kind || cell.level !== anchor.level) continue;
+    seen.add(index);
+    group.push(index);
+    queue.push(...adjacentIndices(index));
+  }
+  return group;
+}
+
+export function mergeGroupForPair(
+  board: Cell[],
+  from: number,
+  to: number,
+  mode: MergeMode
+): number[] | null {
+  const source = board[from];
+  const target = board[to];
+  if (
+    source?.type !== "item" ||
+    target?.type !== "item" ||
+    source.kind !== target.kind ||
+    source.level !== target.level ||
+    !areAdjacent(from, to)
+  ) {
+    return null;
+  }
+  const group = connectedItemGroup(board, to);
+  if (!group.includes(from) || group.length < mode) return null;
+  const ordered = [to, from, ...group
+    .filter((index) => index !== to && index !== from)
+    .sort((a, b) => gridDistance(a, to) - gridDistance(b, to))];
+  return ordered.slice(0, mode);
 }
 
 function consumeGoalItems(board: Cell[], kind: Kind, level: number, count: number): Cell[] {
@@ -310,21 +385,25 @@ function mergeItems(game: GameData, from: number, to: number, mode: MergeMode): 
     return { event: event("maxLevel", { kind: source.kind, level: source.level }) };
   }
 
-  const all = itemIndices(game.board, source.kind, source.level);
-  if (all.length < mode) {
+  if (!areAdjacent(from, to)) {
+    return { event: event("notAdjacent", { kind: source.kind, level: source.level }) };
+  }
+
+  const group = connectedItemGroup(game.board, to);
+  if (group.length < mode) {
     return {
       event: event("notEnough", {
         kind: source.kind,
         level: source.level,
-        missing: mode - all.length
+        missing: mode - group.length
       })
     };
   }
 
-  const others = all
-    .filter((index) => index !== from && index !== to)
-    .sort((a, b) => distance(a, to) - distance(b, to));
-  const consumed = [from, to, ...others].slice(0, mode);
+  const consumed = mergeGroupForPair(game.board, from, to, mode);
+  if (!consumed) {
+    return { event: event("notAdjacent", { kind: source.kind, level: source.level }) };
+  }
   const outputs = mode === 5 ? 2 : 1;
   const nextBoard = game.board.map((cell) => (cell ? { ...cell } : null));
   consumed.forEach((index) => {
@@ -351,7 +430,8 @@ function mergeItems(game: GameData, from: number, to: number, mode: MergeMode): 
       kind: source.kind,
       level: nextLevel,
       index: to,
-      amount: outputs
+      amount: outputs,
+      indices: outputs === 2 ? [to, from] : [to]
     })
   };
 }
@@ -589,16 +669,9 @@ export function gameReducer(state: AppState, action: GameAction): AppState {
       };
     }
     case "autoMerge": {
-      const groups = new Map<string, number[]>();
-      game.board.forEach((cell, index) => {
-        if (cell?.type === "item" && cell.level < MAX_LEVEL) {
-          const key = `${cell.kind}-${cell.level}`;
-          groups.set(key, [...(groups.get(key) ?? []), index]);
-        }
-      });
-      const enough = [...groups.values()].find((indices) => indices.length >= game.mergeMode);
-      if (!enough) return { ...state, event: event("noMerge") };
-      const result = mergeItems(game, enough[0], enough[1], game.mergeMode);
+      const pair = findHint(game.board, game.mergeMode);
+      if (!pair) return { ...state, event: event("noMerge") };
+      const result = mergeItems(game, pair[0], pair[1], game.mergeMode);
       if (!result.game) return { ...state, event: result.event };
       return { ...withHistory(state, result.game), event: result.event };
     }
@@ -711,15 +784,14 @@ export function gameReducer(state: AppState, action: GameAction): AppState {
 }
 
 export function findHint(board: Cell[], mode: MergeMode): [number, number] | null {
-  const groups = new Map<string, number[]>();
-  board.forEach((cell, index) => {
-    if (cell?.type === "item" && cell.level < MAX_LEVEL) {
-      const key = `${cell.kind}-${cell.level}`;
-      groups.set(key, [...(groups.get(key) ?? []), index]);
+  for (let index = 0; index < board.length; index += 1) {
+    const cell = board[index];
+    if (cell?.type !== "item" || cell.level >= MAX_LEVEL) continue;
+    for (const target of adjacentIndices(index)) {
+      if (mergeGroupForPair(board, index, target, mode)) {
+        return [index, target];
+      }
     }
-  });
-  for (const indices of groups.values()) {
-    if (indices.length >= mode) return [indices[0], indices[1]];
   }
   return null;
 }

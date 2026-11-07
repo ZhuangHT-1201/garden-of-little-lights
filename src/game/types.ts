@@ -74,6 +74,7 @@ export type GameEventType =
   | "move"
   | "fog"
   | "notEnough"
+  | "notAdjacent"
   | "noDew"
   | "boardFull"
   | "selected"
@@ -100,6 +101,7 @@ export interface GameEvent {
   index?: number;
   amount?: number;
   itemId?: string;
+  indices?: number[];
 }
 
 export interface Snapshot {

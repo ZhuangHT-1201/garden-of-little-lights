@@ -2,7 +2,15 @@ import { useEffect, useRef, useState } from "react";
 import { BookOpen, Droplets, Volume2, VolumeX } from "lucide-react";
 import type { GameEvent, Kind, Lang, MergeMode, ThemeId } from "./game/types";
 import { getChapter, getLevel, itemName, localized } from "./game/levels";
-import { allDiscovered, findHint, itemKey, MAX_DEW } from "./game/engine";
+import {
+  allDiscovered,
+  areAdjacent,
+  connectedItemGroup,
+  findHint,
+  itemKey,
+  MAX_DEW,
+  mergeGroupForPair
+} from "./game/engine";
 import { t } from "./game/i18n";
 import { useGame } from "./game/useGame";
 import { haptic, quietSound } from "./game/audio";
@@ -51,6 +59,8 @@ function eventMessage(event: GameEvent, lang: Lang): { text: string; tone: Toast
           : t(lang, "toast.notEnough", { n: event.missing ?? 1 }),
         tone: "warn"
       };
+    case "notAdjacent":
+      return { text: t(lang, "toast.notAdjacent"), tone: "warn" };
     case "noDew":
       return { text: t(lang, "toast.noDew"), tone: "warn" };
     case "boardFull":
@@ -224,12 +234,53 @@ export default function App() {
       setSelected(null);
       return;
     }
+    const selectedCell = game.board[selected];
+    if (
+      selectedCell?.type === "item" &&
+      cell.type === "item" &&
+      selectedCell.kind === cell.kind &&
+      selectedCell.level === cell.level
+    ) {
+      if (!areAdjacent(selected, index)) {
+        showToast(t(lang, "toast.notAdjacent"), "warn");
+        return;
+      }
+      if (!mergeGroupForPair(game.board, selected, index, game.mergeMode)) {
+        const groupSize = connectedItemGroup(game.board, index).length;
+        showToast(
+          t(lang, "toast.notEnough", { n: Math.max(1, game.mergeMode - groupSize) }),
+          "warn"
+        );
+        return;
+      }
+    }
     dispatch({ type: "move", from: selected, to: index });
     setSelected(null);
     setHint(null);
   };
 
   const moveCell = (from: number, to: number) => {
+    const source = game.board[from];
+    const target = game.board[to];
+    if (
+      source?.type === "item" &&
+      target?.type === "item" &&
+      source.kind === target.kind &&
+      source.level === target.level
+    ) {
+      if (!areAdjacent(from, to)) {
+        showToast(t(lang, "toast.notAdjacent"), "warn");
+        return;
+      }
+      if (!mergeGroupForPair(game.board, from, to, game.mergeMode)) {
+        const groupSize = connectedItemGroup(game.board, to).length;
+        showToast(
+          t(lang, "toast.notEnough", { n: Math.max(1, game.mergeMode - groupSize) }),
+          "warn"
+        );
+        return;
+      }
+    }
     dispatch({ type: "move", from, to });
     setSelected(null);
     setHint(null);

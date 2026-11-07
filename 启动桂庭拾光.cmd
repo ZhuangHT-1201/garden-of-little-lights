@@ -1,8 +1,8 @@
 @echo off
 setlocal
 cd /d "%~dp0"
-if exist "releases\desktop\桂庭拾光-Windows-一键启动-1.0.0.exe" (
-  start "" "releases\desktop\桂庭拾光-Windows-一键启动-1.0.0.exe"
+if exist "releases\desktop\桂庭拾光-Windows-一键启动-1.1.0.exe" (
+  start "" "releases\desktop\桂庭拾光-Windows-一键启动-1.1.0.exe"
   exit /b
 )
 if exist "dist\index.html" (
